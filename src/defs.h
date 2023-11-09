@@ -227,6 +227,7 @@ typedef struct ioctlent {
 # define INJECT_F_SYSCALL	0x20
 # define INJECT_F_POKE_ENTER	0x40
 # define INJECT_F_POKE_EXIT	0x80
+# define INJECT_F_FAULT		0x100
 
 # define INJECT_ACTION_FLAGS	\
 	(INJECT_F_SIGNAL	\
@@ -236,15 +237,17 @@ typedef struct ioctlent {
 	|INJECT_F_DELAY_EXIT	\
 	|INJECT_F_POKE_ENTER	\
 	|INJECT_F_POKE_EXIT	\
+	|INJECT_F_FAULT		\
 	)
 
 struct inject_data {
-	uint8_t flags;		/* 8 of 8 flags are used */
+	uint16_t flags;		/* 8 of 16 flags are used */
 	uint8_t signo;		/* NSIG <= 128 */
 	uint16_t rval_idx;	/* index in retval_vec */
 	uint16_t delay_idx;	/* index in delay_data_vec */
 	uint16_t poke_idx;	/* index in poke_vec */
 	uint16_t scno;		/* syscall to be injected instead of -1 */
+	uint16_t nth;		/* makes N-th call int the task fail */
 };
 
 struct inject_opts {
@@ -373,6 +376,7 @@ struct tcb {
 # define QUAL_VERBOSE	0x004	/* decode the structures of this syscall */
 # define QUAL_RAW	0x008	/* print all args in hex for this syscall */
 # define QUAL_INJECT	0x010	/* tamper with this system call on purpose */
+# define QUAL_FAULT	0x020	/* indicate fault is injected to this system call */
 
 # define DEFAULT_QUAL_FLAGS (QUAL_TRACE | QUAL_ABBREV | QUAL_VERBOSE)
 
@@ -396,6 +400,7 @@ struct tcb {
 # define syscall_tampered_poked(tcp)	((tcp)->flags & TCB_TAMPERED_POKED)
 # define syscall_tampered_nofail(tcp) ((tcp)->flags & TCB_TAMPERED_NO_FAIL)
 # define has_seccomp_filter(tcp)	((tcp)->flags & TCB_SECCOMP_FILTER)
+# define fault(tcp) ((tcp)->qual_flg & QUAL_FAULT)
 
 extern const struct_sysent stub_sysent;
 # define tcp_sysent(tcp) (tcp->s_ent ?: &stub_sysent)

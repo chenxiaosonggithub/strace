@@ -346,8 +346,15 @@ parse_inject_token(const char *const token, struct inject_opts *const fopts,
 		}
 
 		fopts->data.flags |= INJECT_F_SYSCALL;
+	} else if ((val = STR_STRIP_PREFIX(token, "fault=")) != token) {
+		if (fopts->data.flags & (INJECT_F_ERROR | INJECT_F_RETVAL |
+					 INJECT_F_FAULT))
+			return false;
+		fopts->data.nth = string_to_uint_upto(val, 0xffff);
+		fopts->data.flags |= INJECT_F_FAULT;
 	} else if ((val = STR_STRIP_PREFIX(token, "error=")) != token) {
-		if (fopts->data.flags & (INJECT_F_ERROR | INJECT_F_RETVAL))
+		if (fopts->data.flags & (INJECT_F_ERROR | INJECT_F_RETVAL |
+					 INJECT_F_FAULT))
 			return false;
 		intval = string_to_uint_upto(val, MAX_ERRNO_VALUE);
 		if (intval < 0)
@@ -359,7 +366,8 @@ parse_inject_token(const char *const token, struct inject_opts *const fopts,
 	} else if (!fault_tokens_only
 		   && (val = STR_STRIP_PREFIX(token, "retval=")) != token) {
 
-		if (fopts->data.flags & (INJECT_F_ERROR | INJECT_F_RETVAL))
+		if (fopts->data.flags & (INJECT_F_ERROR | INJECT_F_RETVAL |
+					 INJECT_F_FAULT))
 			return false;
 
 		errno = 0;

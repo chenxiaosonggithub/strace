@@ -103,6 +103,8 @@ libstrace_a_SOURCES =	\
 	fadvise.c	\
 	fallocate.c	\
 	fanotify.c	\
+	fault.c		\
+	fault.h		\
 	fchownat.c	\
 	fcntl.c		\
 	fetch_bpf_fprog.c \

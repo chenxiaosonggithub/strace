@@ -23,6 +23,7 @@
 #include "delay.h"
 #include "poke.h"
 #include "retval.h"
+#include "fault.h"
 #include <limits.h>
 #include <fcntl.h>
 
@@ -529,6 +530,9 @@ tamper_with_syscall_entering(struct tcb *tcp, unsigned int *signo)
 			delay_tcb(tcp, opts->data.delay_idx, true);
 		if (opts->data.flags & INJECT_F_DELAY_EXIT)
 			tcp->flags |= TCB_INJECT_DELAY_EXIT;
+		if (opts->data.flags & INJECT_F_FAULT &&
+		    !inject_fault(tcp->pid, opts->data.nth))
+		    tcp->qual_flg |= QUAL_FAULT;
 	}
 
 	return 0;
@@ -757,6 +761,15 @@ print_syscall_resume(struct tcb *tcp)
 	}
 }
 
+static void print_syscall_fault(struct tcb *tcp)
+{
+	struct inject_opts *opts = tcb_inject_opts(tcp);
+	int nth = fault_injected(tcp->pid);
+
+	tcp->qual_flg &= ~QUAL_FAULT;
+	tprintf("(FAIL-NTH %d/%d)", nth, opts->data.nth);
+}
+
 static void
 print_injected_note(struct tcb *tcp)
 {
@@ -766,6 +779,9 @@ print_injected_note(struct tcb *tcp)
 		tprints(" (INJECTED: args)");
 	else if (syscall_tampered(tcp))
 		tprints(" (INJECTED)");
+
+	if(fault(tcp))
+		print_syscall_fault(tcp);
 	if (syscall_tampered_delayed(tcp))
 		tprints(" (DELAYED)");
 }
